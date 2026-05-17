@@ -1,0 +1,32 @@
+networks:
+  enterprise_net:
+    driver: bridge
+
+services:
+  redis-enterprise-node1:
+    image: redislabs/redis:latest
+    container_name: redis-enterprise-node1
+    networks:
+      - enterprise_net
+    ports:
+      - "8443:8443"   # Admin UI
+      - "9443:9443"   # REST API
+      - "12000:12000" # Database Port
+    cap_add:
+      - SYS_RESOURCE
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:ro
+
+  redis-enterprise-node2:
+    image: redislabs/redis:latest
+    container_name: redis-enterprise-node2
+    networks:
+      - enterprise_net
+    ports:
+      - "8444:8443"   # Admin UI (Host Port 8444)
+      - "9445:9443"   # REST API (Host Port 9445)
+      - "12001:12000" # Database Port (Host Port 12001)
+    cap_add:
+      - SYS_RESOURCE
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:ro

@@ -158,6 +158,7 @@ class RedisEnterpriseAssessor:
 
                 # Memory metrics
                 db_metrics["memory"] = {
+                    "used_memory": info.get("used_memory", 0),
                     "used_memory_human": info.get("used_memory_human"),
                     "used_memory_peak_human": info.get("used_memory_peak_human"),
                     "mem_fragmentation_ratio": info.get("mem_fragmentation_ratio"),
@@ -248,11 +249,9 @@ class RedisEnterpriseAssessor:
         # Evaluate metrics
         for port, metrics in self.assessment_data.get("metrics", {}).items():
             try:
-                mem_str = metrics.get("memory", {}).get("used_memory_human", "0")
-                if "M" in mem_str:
-                    total_memory += float(mem_str.replace("M", ""))
-                elif "G" in mem_str:
-                    total_memory += float(mem_str.replace("G", "")) * 1024
+                mem_bytes = metrics.get("memory", {}).get("used_memory", 0)
+                # Convert bytes to MB
+                total_memory += float(mem_bytes) / (1024 * 1024)
 
                 frag = metrics.get("memory", {}).get("mem_fragmentation_ratio")
                 if frag and float(frag) > 1.5:
