@@ -4,6 +4,7 @@ import logging
 import sys
 import requests
 import redis
+import csv
 from urllib3.exceptions import InsecureRequestWarning
 
 # Suppress insecure request warnings if user disables SSL verification
@@ -221,6 +222,133 @@ class RedisEnterpriseAssessor:
             finally:
                 client.close()
 
+    def generate_reports(self, summary_file="redis_migration_summary.md", manifest_file="redis_shard_manifest.csv"):
+        """Generates the Markdown summary and CSV shard manifest."""
+        logger.info(f"Generating reports: {summary_file}, {manifest_file}")
+
+        # Calculate GCP Migration Compatibility Score
+        score = 100
+        blockers = []
+        warnings = []
+
+        gcp_supported_modules = {"search", "json"} # Example of modules that might have equivalents
+
+        all_modules = set()
+        total_memory = 0
+        fragmentation_issues = False
+
+        # Evaluate databases
+        for db in self.assessment_data.get("databases", []):
+            for mod in db.get("modules", []):
+                all_modules.add(mod.lower())
+                if mod.lower() not in gcp_supported_modules:
+                    score -= 20
+                    blockers.append(f"Unsupported module detected: {mod}")
+
+        # Evaluate metrics
+        for port, metrics in self.assessment_data.get("metrics", {}).items():
+            try:
+                mem_str = metrics.get("memory", {}).get("used_memory_human", "0")
+                if "M" in mem_str:
+                    total_memory += float(mem_str.replace("M", ""))
+                elif "G" in mem_str:
+                    total_memory += float(mem_str.replace("G", "")) * 1024
+
+                frag = metrics.get("memory", {}).get("mem_fragmentation_ratio")
+                if frag and float(frag) > 1.5:
+                    fragmentation_issues = True
+                    score -= 10
+                    warnings.append(f"High memory fragmentation ratio ({frag}) on port {port}")
+            except Exception as e:
+                logger.warning(f"Error calculating score for port {port}: {e}")
+
+        # Write Markdown Summary
+        with open(summary_file, 'w') as f:
+            f.write("# Redis Enterprise Migration Assessment Summary\n\n")
+            f.write("## Executive Summary\n")
+            f.write(f"- **Cluster Name:** {self.assessment_data.get('cluster', {}).get('name', 'N/A')}\n")
+            f.write(f"- **Engine Version:** {self.assessment_data.get('cluster', {}).get('version', 'N/A')}\n")
+            f.write(f"- **Total Nodes:** {len(self.assessment_data.get('nodes', []))}\n")
+            f.write(f"- **Total Logical Databases:** {len(self.assessment_data.get('databases', []))}\n")
+            f.write(f"- **Total Estimated Memory:** ~{total_memory/1024:.2f} GB\n")
+            f.write(f"- **Active Modules:** {', '.join(all_modules) if all_modules else 'None'}\n\n")
+
+            f.write(f"## GCP Migration Compatibility Score: {max(0, score)}/100\n")
+
+            if blockers:
+                f.write("### 🚨 Critical Blockers\n")
+                for blocker in set(blockers):
+                    f.write(f"- {blocker}\n")
+
+            if warnings:
+                f.write("### ⚠️ Warnings\n")
+                for warning in set(warnings):
+                    f.write(f"- {warning}\n")
+
+        # Write CSV Shard Manifest
+        with open(manifest_file, 'w', newline='') as csvfile:
+            fieldnames = [
+                'Cluster Name / DNS', 'Node ID & IP Address', 'Shard ID', 'Role',
+                'Slot Range', 'Database Port', 'Current Memory Utilization', 'Persistent Storage Type',
+                'Commands Per Second', 'Database Keys Count'
+            ]
+            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+            writer.writeheader()
+
+            cluster_name = self.assessment_data.get('cluster', {}).get('name', self.host)
+
+            # Map node IDs to IPs
+            node_map = {node.get('id'): node.get('ip') for node in self.assessment_data.get('nodes', [])}
+
+            for db in self.assessment_data.get('databases', []):
+                db_port = db.get("port")
+                metrics = self.assessment_data.get("metrics", {}).get(str(db_port), {})
+
+                # Fetch keyspaces info directly from the database level if possible
+                keys_count = sum([int(v.split(',')[0].split('=')[1]) for k, v in metrics.get("keyspaces", {}).items() if "keys=" in v])
+
+                persistence = "None"
+                if metrics.get("persistence", {}).get("aof_enabled"):
+                    persistence = "AOF"
+                elif metrics.get("persistence", {}).get("rdb_last_save_time"):
+                    persistence = "RDB"
+
+                ops_sec = metrics.get("stats", {}).get("instantaneous_ops_per_sec", "N/A")
+                mem_util = metrics.get("memory", {}).get("used_memory_human", "N/A")
+
+                shards = db.get("shards", [])
+
+                # If no API shards, assume 1 shard for standard non-clustered DB
+                if not shards:
+                     writer.writerow({
+                        'Cluster Name / DNS': cluster_name,
+                        'Node ID & IP Address': f"N/A ({self.host})",
+                        'Shard ID': '0',
+                        'Role': 'master',
+                        'Slot Range': 'N/A',
+                        'Database Port': db_port,
+                        'Current Memory Utilization': mem_util,
+                        'Persistent Storage Type': persistence,
+                        'Commands Per Second': ops_sec,
+                        'Database Keys Count': keys_count
+                    })
+                else:
+                    for shard in shards:
+                        node_ip = node_map.get(shard.get("node_uid"), "Unknown")
+                        writer.writerow({
+                            'Cluster Name / DNS': cluster_name,
+                            'Node ID & IP Address': f"{shard.get('node_uid')} ({node_ip})",
+                            'Shard ID': shard.get("uid"),
+                            'Role': shard.get("role", "Unknown"),
+                            'Slot Range': shard.get("slots", "N/A"),
+                            'Database Port': db_port,
+                            'Current Memory Utilization': mem_util, # Shard memory needs deep metric mapping, approximating with DB level
+                            'Persistent Storage Type': persistence,
+                            'Commands Per Second': ops_sec,
+                            'Database Keys Count': keys_count
+                        })
+
+
     def run_assessment(self):
         logger.info(f"Starting Redis Enterprise Assessment for {self.host}")
 
@@ -251,6 +379,10 @@ def main():
     # Config file support
     parser.add_argument("--config", help="Path to a JSON configuration file (overrides other args if set)")
 
+    # Report Output
+    parser.add_argument("--summary-file", default="redis_migration_summary.md", help="Output path for the Markdown summary")
+    parser.add_argument("--manifest-file", default="redis_shard_manifest.csv", help="Output path for the CSV shard manifest")
+
     args = parser.parse_args()
 
     if args.config:
@@ -278,6 +410,7 @@ def main():
     )
 
     report = assessor.run_assessment()
+    assessor.generate_reports(summary_file=args.summary_file, manifest_file=args.manifest_file)
     print(json.dumps(report, indent=4))
 
 if __name__ == "__main__":
