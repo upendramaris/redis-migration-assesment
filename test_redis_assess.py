@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import patch, MagicMock
-from redis_assessment import RedisEnterpriseAssessor
+from redis_assess import RedisEnterpriseAssessor
 import requests
 import redis
 

@@ -1,7 +1,7 @@
 # Redis Enterprise Active-Active Testing Environment
 
 This directory contains configuration to spin up a simulated Redis Enterprise multi-region deployment.
-The simulation utilizes the official `redislabs/redis` image to stand up two nodes acting as independent clusters to test the `redis_assessment.py` logic targeting Enterprise REST APIs and specific module checks.
+The simulation utilizes the official `redislabs/redis` image to stand up two nodes acting as independent clusters to test the `redis_assess.py` logic targeting Enterprise REST APIs and specific module checks.
 
 ## Environment Architecture
 
@@ -43,7 +43,7 @@ Once initialized, use the assessment tool against Node 1 to test full Enterprise
 
 **Test Command:**
 ```bash
-python redis_assessment.py --host localhost --api-port 9443 --port 12000 --username "admin@example.com" --password "admin123" --no-ssl
+python redis_assess.py --host localhost --api-port 9443 --port 12000 --username "admin@example.com" --password "admin123" --no-ssl
 ```
 
 Expected output should correctly identify the `cluster1.local` topology, 2 logical shards mapping to the single node, and correctly parse the `search` module lowering the GCP migration compatibility score.

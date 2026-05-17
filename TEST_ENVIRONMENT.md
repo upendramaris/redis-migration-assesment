@@ -1,6 +1,6 @@
 # Redis Assessment Test Environments
 
-This directory contains configuration to spin up three distinct Redis topologies using Docker Compose to test the `redis_assessment.py` scripts.
+This directory contains configuration to spin up three distinct Redis topologies using Docker Compose to test the `redis_assess.py` scripts.
 
 ## Prerequisites
 Ensure Docker and Docker Compose are installed.
