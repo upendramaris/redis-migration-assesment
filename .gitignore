@@ -1,1 +1,6 @@
-.pyc\n__pycache__
+*.pyc
+__pycache__
+assessments_*/
+clusters.csv
+redis_migration_summary.md
+redis_shard_manifest.csv
