@@ -4,3 +4,4 @@ assessments_*/
 clusters.csv
 redis_migration_summary.md
 redis_shard_manifest.csv
+tls/
