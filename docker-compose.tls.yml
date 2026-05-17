@@ -1,0 +1,42 @@
+services:
+  standard-primary:
+    volumes:
+      - ./tls:/tls:ro
+    ports:
+      - "6379:6379"
+      - "16379:16379"
+    command: >
+      redis-server
+      --requirepass "redis_password"
+      --bind 0.0.0.0
+      --port 6379
+      --tls-port 16379
+      --tls-cert-file /tls/redis.crt
+      --tls-key-file /tls/redis.key
+      --tls-ca-cert-file /tls/ca.crt
+      --tls-auth-clients no
+    healthcheck:
+      test: ["CMD", "redis-cli", "--tls", "--cert", "/tls/redis.crt", "--key", "/tls/redis.key", "--cacert", "/tls/ca.crt", "-a", "redis_password", "-p", "16379", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  standard-replica:
+    volumes:
+      - ./tls:/tls:ro
+    ports:
+      - "6380:6379"
+      - "16380:16379"
+    command: >
+      redis-server
+      --replicaof standard-primary 16379
+      --requirepass "redis_password"
+      --masterauth "redis_password"
+      --bind 0.0.0.0
+      --port 6379
+      --tls-port 16379
+      --tls-cert-file /tls/redis.crt
+      --tls-key-file /tls/redis.key
+      --tls-ca-cert-file /tls/ca.crt
+      --tls-replication yes
+      --tls-auth-clients no

@@ -1,0 +1,201 @@
+networks:
+  standard_net:
+    driver: bridge
+  sentinel_net:
+    driver: bridge
+  cluster_net:
+    driver: bridge
+
+services:
+  # ==========================================
+  # 1. Standard Primary/Replica Setup
+  # ==========================================
+  standard-primary:
+    image: redis:7.2.4
+    container_name: standard-primary
+    profiles: ["standard"]
+    networks:
+      - standard_net
+    ports:
+      - "6379:6379"
+    command: >
+      redis-server
+      --requirepass "redis_password"
+      --bind 0.0.0.0
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "redis_password", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  standard-replica:
+    image: redis:7.2.4
+    container_name: standard-replica
+    profiles: ["standard"]
+    networks:
+      - standard_net
+    ports:
+      - "6380:6379"
+    command: >
+      redis-server
+      --replicaof standard-primary 6379
+      --requirepass "redis_password"
+      --masterauth "redis_password"
+      --bind 0.0.0.0
+    depends_on:
+      standard-primary:
+        condition: service_healthy
+
+  # ==========================================
+  # 2. Redis Sentinel Architecture
+  # ==========================================
+  sentinel-primary:
+    image: bitnami/redis:7.2
+    container_name: sentinel-primary
+    profiles: ["sentinel"]
+    networks:
+      - sentinel_net
+    environment:
+      - REDIS_REPLICATION_MODE=master
+      - REDIS_PASSWORD=sentinel_pass
+      - ALLOW_EMPTY_PASSWORD=no
+    ports:
+      - "6381:6379"
+
+  sentinel-replica-1:
+    image: bitnami/redis:7.2
+    container_name: sentinel-replica-1
+    profiles: ["sentinel"]
+    networks:
+      - sentinel_net
+    environment:
+      - REDIS_REPLICATION_MODE=slave
+      - REDIS_MASTER_HOST=sentinel-primary
+      - REDIS_MASTER_PASSWORD=sentinel_pass
+      - REDIS_PASSWORD=sentinel_pass
+      - ALLOW_EMPTY_PASSWORD=no
+    depends_on:
+      - sentinel-primary
+
+  sentinel-replica-2:
+    image: bitnami/redis:7.2
+    container_name: sentinel-replica-2
+    profiles: ["sentinel"]
+    networks:
+      - sentinel_net
+    environment:
+      - REDIS_REPLICATION_MODE=slave
+      - REDIS_MASTER_HOST=sentinel-primary
+      - REDIS_MASTER_PASSWORD=sentinel_pass
+      - REDIS_PASSWORD=sentinel_pass
+      - ALLOW_EMPTY_PASSWORD=no
+    depends_on:
+      - sentinel-primary
+
+  sentinel-1:
+    image: bitnami/redis-sentinel:7.2
+    container_name: sentinel-1
+    profiles: ["sentinel"]
+    networks:
+      - sentinel_net
+    environment:
+      - REDIS_MASTER_HOST=sentinel-primary
+      - REDIS_MASTER_PASSWORD=sentinel_pass
+      - REDIS_SENTINEL_DOWN_AFTER_MILLISECONDS=3000
+    ports:
+      - "26379:26379"
+    depends_on:
+      - sentinel-primary
+
+  sentinel-2:
+    image: bitnami/redis-sentinel:7.2
+    container_name: sentinel-2
+    profiles: ["sentinel"]
+    networks:
+      - sentinel_net
+    environment:
+      - REDIS_MASTER_HOST=sentinel-primary
+      - REDIS_MASTER_PASSWORD=sentinel_pass
+      - REDIS_SENTINEL_DOWN_AFTER_MILLISECONDS=3000
+    ports:
+      - "26380:26379"
+    depends_on:
+      - sentinel-primary
+
+  sentinel-3:
+    image: bitnami/redis-sentinel:7.2
+    container_name: sentinel-3
+    profiles: ["sentinel"]
+    networks:
+      - sentinel_net
+    environment:
+      - REDIS_MASTER_HOST=sentinel-primary
+      - REDIS_MASTER_PASSWORD=sentinel_pass
+      - REDIS_SENTINEL_DOWN_AFTER_MILLISECONDS=3000
+    ports:
+      - "26381:26379"
+    depends_on:
+      - sentinel-primary
+
+  # ==========================================
+  # 3. Native Redis Cluster
+  # ==========================================
+  cluster-node-1:
+    image: redis:7.2.4
+    container_name: cluster-node-1
+    profiles: ["cluster"]
+    networks:
+      - cluster_net
+    ports:
+      - "7000:7000"
+    command: redis-server --port 7000 --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --appendonly yes --bind 0.0.0.0
+
+  cluster-node-2:
+    image: redis:7.2.4
+    container_name: cluster-node-2
+    profiles: ["cluster"]
+    networks:
+      - cluster_net
+    ports:
+      - "7001:7001"
+    command: redis-server --port 7001 --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --appendonly yes --bind 0.0.0.0
+
+  cluster-node-3:
+    image: redis:7.2.4
+    container_name: cluster-node-3
+    profiles: ["cluster"]
+    networks:
+      - cluster_net
+    ports:
+      - "7002:7002"
+    command: redis-server --port 7002 --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --appendonly yes --bind 0.0.0.0
+
+  cluster-node-4:
+    image: redis:7.2.4
+    container_name: cluster-node-4
+    profiles: ["cluster"]
+    networks:
+      - cluster_net
+    ports:
+      - "7003:7003"
+    command: redis-server --port 7003 --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --appendonly yes --bind 0.0.0.0
+
+  cluster-node-5:
+    image: redis:7.2.4
+    container_name: cluster-node-5
+    profiles: ["cluster"]
+    networks:
+      - cluster_net
+    ports:
+      - "7004:7004"
+    command: redis-server --port 7004 --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --appendonly yes --bind 0.0.0.0
+
+  cluster-node-6:
+    image: redis:7.2.4
+    container_name: cluster-node-6
+    profiles: ["cluster"]
+    networks:
+      - cluster_net
+    ports:
+      - "7005:7005"
+    command: redis-server --port 7005 --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --appendonly yes --bind 0.0.0.0
