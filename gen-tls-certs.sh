@@ -1,6 +1,9 @@
 #!/bin/bash
 set -e
 
+# Prevent Git Bash (MSYS2) on Windows from translating '/' in OpenSSL subjects to paths
+export MSYS_NO_PATHCONV=1
+
 mkdir -p tls
 cd tls
 
