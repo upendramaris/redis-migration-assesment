@@ -79,7 +79,7 @@ def process_cluster(cluster_row, output_dir):
 
         json.dump(cluster_row, f)
 
-    script_path = os.path.join(os.path.dirname(__file__), "redis_assessment.py")
+    script_path = os.path.join(os.path.dirname(__file__), "redis_assess.py")
 
     cmd = [
         sys.executable, script_path,

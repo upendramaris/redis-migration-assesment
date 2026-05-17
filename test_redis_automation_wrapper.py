@@ -2,7 +2,7 @@ import pytest
 from unittest.mock import patch, MagicMock
 import os
 import subprocess
-from batch_assessment import process_cluster, setup_output_directory, parse_inventory
+from redis_automation_wrapper import process_cluster, setup_output_directory, parse_inventory
 
 def test_parse_inventory_success(tmp_path):
     inv_file = tmp_path / "test_clusters.csv"
