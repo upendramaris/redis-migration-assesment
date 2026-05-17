@@ -50,7 +50,7 @@ services:
   # 2. Redis Sentinel Architecture
   # ==========================================
   sentinel-primary:
-    image: bitnami/redis:7.2
+    image: bitnami/redis:latest
     container_name: sentinel-primary
     profiles: ["sentinel"]
     networks:
@@ -63,7 +63,7 @@ services:
       - "6381:6379"
 
   sentinel-replica-1:
-    image: bitnami/redis:7.2
+    image: bitnami/redis:latest
     container_name: sentinel-replica-1
     profiles: ["sentinel"]
     networks:
@@ -78,7 +78,7 @@ services:
       - sentinel-primary
 
   sentinel-replica-2:
-    image: bitnami/redis:7.2
+    image: bitnami/redis:latest
     container_name: sentinel-replica-2
     profiles: ["sentinel"]
     networks:
@@ -93,7 +93,7 @@ services:
       - sentinel-primary
 
   sentinel-1:
-    image: bitnami/redis-sentinel:7.2
+    image: bitnami/redis-sentinel:latest
     container_name: sentinel-1
     profiles: ["sentinel"]
     networks:
@@ -108,7 +108,7 @@ services:
       - sentinel-primary
 
   sentinel-2:
-    image: bitnami/redis-sentinel:7.2
+    image: bitnami/redis-sentinel:latest
     container_name: sentinel-2
     profiles: ["sentinel"]
     networks:
@@ -123,7 +123,7 @@ services:
       - sentinel-primary
 
   sentinel-3:
-    image: bitnami/redis-sentinel:7.2
+    image: bitnami/redis-sentinel:latest
     container_name: sentinel-3
     profiles: ["sentinel"]
     networks:
