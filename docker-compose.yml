@@ -50,90 +50,87 @@ services:
   # 2. Redis Sentinel Architecture
   # ==========================================
   sentinel-primary:
-    image: bitnami/redis:latest
+    image: redis:7.2.4
     container_name: sentinel-primary
     profiles: ["sentinel"]
     networks:
       - sentinel_net
-    environment:
-      - REDIS_REPLICATION_MODE=master
-      - REDIS_PASSWORD=sentinel_pass
-      - ALLOW_EMPTY_PASSWORD=no
     ports:
       - "6381:6379"
+    command: >
+      redis-server
+      --requirepass "sentinel_pass"
+      --bind 0.0.0.0
 
   sentinel-replica-1:
-    image: bitnami/redis:latest
+    image: redis:7.2.4
     container_name: sentinel-replica-1
     profiles: ["sentinel"]
     networks:
       - sentinel_net
-    environment:
-      - REDIS_REPLICATION_MODE=slave
-      - REDIS_MASTER_HOST=sentinel-primary
-      - REDIS_MASTER_PASSWORD=sentinel_pass
-      - REDIS_PASSWORD=sentinel_pass
-      - ALLOW_EMPTY_PASSWORD=no
+    command: >
+      redis-server
+      --replicaof sentinel-primary 6379
+      --requirepass "sentinel_pass"
+      --masterauth "sentinel_pass"
+      --bind 0.0.0.0
     depends_on:
       - sentinel-primary
 
   sentinel-replica-2:
-    image: bitnami/redis:latest
+    image: redis:7.2.4
     container_name: sentinel-replica-2
     profiles: ["sentinel"]
     networks:
       - sentinel_net
-    environment:
-      - REDIS_REPLICATION_MODE=slave
-      - REDIS_MASTER_HOST=sentinel-primary
-      - REDIS_MASTER_PASSWORD=sentinel_pass
-      - REDIS_PASSWORD=sentinel_pass
-      - ALLOW_EMPTY_PASSWORD=no
+    command: >
+      redis-server
+      --replicaof sentinel-primary 6379
+      --requirepass "sentinel_pass"
+      --masterauth "sentinel_pass"
+      --bind 0.0.0.0
     depends_on:
       - sentinel-primary
 
   sentinel-1:
-    image: bitnami/redis-sentinel:latest
+    image: redis:7.2.4
     container_name: sentinel-1
     profiles: ["sentinel"]
     networks:
       - sentinel_net
-    environment:
-      - REDIS_MASTER_HOST=sentinel-primary
-      - REDIS_MASTER_PASSWORD=sentinel_pass
-      - REDIS_SENTINEL_DOWN_AFTER_MILLISECONDS=3000
     ports:
       - "26379:26379"
+    volumes:
+      - ./sentinel.conf:/etc/redis/sentinel.conf
+    command: redis-sentinel /etc/redis/sentinel.conf
     depends_on:
       - sentinel-primary
 
   sentinel-2:
-    image: bitnami/redis-sentinel:latest
+    image: redis:7.2.4
     container_name: sentinel-2
     profiles: ["sentinel"]
     networks:
       - sentinel_net
-    environment:
-      - REDIS_MASTER_HOST=sentinel-primary
-      - REDIS_MASTER_PASSWORD=sentinel_pass
-      - REDIS_SENTINEL_DOWN_AFTER_MILLISECONDS=3000
     ports:
       - "26380:26379"
+    volumes:
+      - ./sentinel.conf:/etc/redis/sentinel.conf
+    command: redis-sentinel /etc/redis/sentinel.conf
     depends_on:
       - sentinel-primary
 
   sentinel-3:
-    image: bitnami/redis-sentinel:latest
+    image: redis:7.2.4
     container_name: sentinel-3
     profiles: ["sentinel"]
     networks:
       - sentinel_net
-    environment:
-      - REDIS_MASTER_HOST=sentinel-primary
-      - REDIS_MASTER_PASSWORD=sentinel_pass
-      - REDIS_SENTINEL_DOWN_AFTER_MILLISECONDS=3000
     ports:
       - "26381:26379"
+    volumes:
+      - ./sentinel.conf:/etc/redis/sentinel.conf
+    command: redis-sentinel /etc/redis/sentinel.conf
     depends_on:
       - sentinel-primary
 
