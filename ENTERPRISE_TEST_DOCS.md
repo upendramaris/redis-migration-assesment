@@ -46,4 +46,4 @@ Once initialized, use the assessment tool against Node 1 to test full Enterprise
 python redis_assess.py --host localhost --api-port 9443 --port 12000 --username "admin@example.com" --password "admin123" --no-ssl
 ```
 
-Expected output should correctly identify the `cluster1.local` topology, 2 logical shards mapping to the single node, and correctly parse the `search` module lowering the GCP migration compatibility score.
+Expected output should correctly identify the `cluster1.local` topology, 1 logical shard mapping to the single node (fallback configuration).

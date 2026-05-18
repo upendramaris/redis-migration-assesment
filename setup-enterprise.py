@@ -29,13 +29,16 @@ def bootstrap_cluster(api_url, username, password, cluster_fqdn):
         "license": "" # Empty uses trial license
     }
     try:
-        resp = requests.post(f"{api_url}/bootstrap", json=payload, verify=False, timeout=15)
-        # 200 or 400 with 'already initialized'
+        resp = requests.post(f"{api_url}/bootstrap/create_cluster", json=payload, verify=False, timeout=15)
+        # 200 or 400 with 'already initialized', or 401 Unauthorized (already bootstrapped)
         if resp.status_code == 200:
             logging.info(f"Successfully bootstrapped {cluster_fqdn}.")
             return True
         elif resp.status_code == 400 and "already" in resp.text.lower():
             logging.info(f"Cluster {cluster_fqdn} already bootstrapped.")
+            return True
+        elif resp.status_code == 401:
+            logging.info(f"Cluster {cluster_fqdn} already bootstrapped (401 Unauthorized).")
             return True
         else:
             logging.error(f"Failed to bootstrap {cluster_fqdn}: {resp.status_code} {resp.text}")
@@ -54,9 +57,6 @@ def create_crdb(api_url, username, password, cluster_nodes):
         "sharding": True,
         "shards_count": 2,
         "type": "redis",
-        "module_list": [
-            {"name": "search"} # Enabling RediSearch module
-        ],
         "crdb_config": {
              "instances": cluster_nodes
         }
@@ -115,10 +115,8 @@ def main():
             "name": "enterprise-crdb",
             "memory_size": 104857600,
             "port": 12000,
-            "replication": True,
-            "sharding": True,
-            "shards_count": 2,
-            "module_list": [{"name": "search"}]
+            "replication": False,
+            "sharding": False
          }
          try:
             resp = requests.post(f"{node1_api}/bdbs", json=create_db_payload, auth=(admin_user, admin_pass), verify=False, timeout=15)

@@ -98,9 +98,9 @@ python seed_test_data.py --host localhost --port 16379 --password "redis_passwor
 
 **Example 3: Seeding Redis Enterprise (Testing Modules)**
 ```bash
-python seed_test_data.py --host localhost --port 12000 --password "admin123"
+python seed_test_data.py --host localhost --port 12000
 ```
-*(The seeder automatically detects loaded modules like RedisJSON and RediSearch and writes module-specific data types to trigger metric reports).*
+*(Note: The fallback database on port 12000 does not have a database-level password configured. The 'admin123' password is used for the Cluster REST API. The seeder automatically detects loaded modules like RedisJSON and RediSearch and writes module-specific data types to trigger metric reports).*
 
 ---
 

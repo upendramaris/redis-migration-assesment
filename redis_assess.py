@@ -204,7 +204,10 @@ class RedisEnterpriseAssessor:
                     for mod in modules:
                         # MODULE LIST returns a list of lists, [b'name', b'search', b'ver', 20000]
                         # since we have decode_responses=True, it's strings
-                        mod_dict = {mod[i]: mod[i+1] for i in range(0, len(mod), 2)}
+                        if isinstance(mod, dict):
+                            mod_dict = mod
+                        else:
+                            mod_dict = {mod[i]: mod[i+1] for i in range(0, len(mod), 2)}
                         db_metrics["loaded_modules"].append({
                             "name": mod_dict.get("name"),
                             "version": mod_dict.get("ver")
@@ -262,7 +265,7 @@ class RedisEnterpriseAssessor:
                 logger.warning(f"Error calculating score for port {port}: {e}")
 
         # Write Markdown Summary
-        with open(summary_file, 'w') as f:
+        with open(summary_file, 'w', encoding='utf-8') as f:
             f.write("# Redis Enterprise Migration Assessment Summary\n\n")
             f.write("## Executive Summary\n")
             f.write(f"- **Cluster Name:** {self.assessment_data.get('cluster', {}).get('name', 'N/A')}\n")
@@ -285,7 +288,7 @@ class RedisEnterpriseAssessor:
                     f.write(f"- {warning}\n")
 
         # Write CSV Shard Manifest
-        with open(manifest_file, 'w', newline='') as csvfile:
+        with open(manifest_file, 'w', newline='', encoding='utf-8') as csvfile:
             fieldnames = [
                 'Cluster Name / DNS', 'Node ID & IP Address', 'Shard ID', 'Role',
                 'Slot Range', 'Database Port', 'Current Memory Utilization', 'Persistent Storage Type',

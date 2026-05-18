@@ -38,7 +38,10 @@ def seed_modules(client):
         modules_info = client.execute_command("MODULE LIST")
         active_modules = []
         for mod in modules_info:
-            mod_dict = {mod[i]: mod[i+1] for i in range(0, len(mod), 2)}
+            if isinstance(mod, dict):
+                mod_dict = mod
+            else:
+                mod_dict = {mod[i]: mod[i+1] for i in range(0, len(mod), 2)}
             active_modules.append(mod_dict.get("name", "").lower())
 
         if "rejson" in active_modules:
