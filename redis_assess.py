@@ -106,14 +106,14 @@ class RedisEnterpriseAssessor:
 
                 self.assessment_data["databases"].append(db_details)
 
-    def _get_redis_client(self, port):
+    def _get_redis_client(self, port, no_auth=False):
         """Creates a redis client with appropriate SSL settings."""
         try:
             return redis.Redis(
                 host=self.host,
                 port=port,
-                username=self.username,
-                password=self.password,
+                username=None if no_auth else self.username,
+                password=None if no_auth else self.password,
                 ssl=self.ssl_enabled,
                 ssl_cert_reqs='required' if self.ca_cert else 'none',
                 ssl_ca_certs=self.ca_cert,
@@ -141,7 +141,15 @@ class RedisEnterpriseAssessor:
             db_metrics = {"port": port}
             try:
                 # Test connection
-                client.ping()
+                try:
+                    client.ping()
+                except redis.exceptions.AuthenticationError:
+                    logger.warning(f"Authentication failed for Redis on port {port}. Retrying without credentials...")
+                    client.close()
+                    client = self._get_redis_client(port, no_auth=True)
+                    if not client:
+                        continue
+                    client.ping()
 
                 # Fetch INFO all
                 info = client.info("all")
@@ -244,6 +252,8 @@ class RedisEnterpriseAssessor:
         # Evaluate databases
         for db in self.assessment_data.get("databases", []):
             for mod in db.get("modules", []):
+                if not mod:
+                    continue
                 all_modules.add(mod.lower())
                 if mod.lower() not in gcp_supported_modules:
                     score -= 20
