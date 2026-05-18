@@ -18,7 +18,7 @@ def parse_inventory(inventory_file):
         sys.exit(1)
 
     try:
-        with open(inventory_file, 'r') as f:
+        with open(inventory_file, 'r', encoding='utf-8') as f:
             reader = csv.DictReader(f)
             # Ensure expected columns are present
             expected_cols = {'host'}
@@ -64,7 +64,7 @@ def process_cluster(cluster_row, output_dir):
     config_file = os.path.join(cluster_dir, f"{host}_config.json")
 
     # Write the config JSON for the target script
-    with open(config_file, 'w') as f:
+    with open(config_file, 'w', encoding='utf-8') as f:
         # Convert ssl string to boolean if present
         if "ssl" in cluster_row and isinstance(cluster_row["ssl"], str):
              cluster_row["ssl"] = cluster_row["ssl"].lower() in ('true', '1', 't', 'y', 'yes')
@@ -95,7 +95,7 @@ def process_cluster(cluster_row, output_dir):
     except subprocess.CalledProcessError as e:
         logger.error(f"[FAILED] Assessment failed for {host}. See logs for details.")
         error_log = os.path.join(cluster_dir, "error.log")
-        with open(error_log, 'w') as f:
+        with open(error_log, 'w', encoding='utf-8') as f:
             f.write(f"STDOUT:\n{e.stdout}\n")
             f.write(f"STDERR:\n{e.stderr}\n")
         return False, host, "Failed (Check error.log)"

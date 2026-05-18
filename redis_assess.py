@@ -399,7 +399,7 @@ def main():
 
     if args.config:
         try:
-            with open(args.config, 'r') as f:
+            with open(args.config, 'r', encoding='utf-8') as f:
                 config_data = json.load(f)
                 # Apply config values, overriding command line defaults if present in config
                 for key, value in config_data.items():
