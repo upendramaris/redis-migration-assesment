@@ -262,7 +262,7 @@ class RedisEnterpriseAssessor:
                 logger.warning(f"Error calculating score for port {port}: {e}")
 
         # Write Markdown Summary
-        with open(summary_file, 'w') as f:
+        with open(summary_file, 'w', encoding='utf-8') as f:
             f.write("# Redis Enterprise Migration Assessment Summary\n\n")
             f.write("## Executive Summary\n")
             f.write(f"- **Cluster Name:** {self.assessment_data.get('cluster', {}).get('name', 'N/A')}\n")
@@ -285,7 +285,7 @@ class RedisEnterpriseAssessor:
                     f.write(f"- {warning}\n")
 
         # Write CSV Shard Manifest
-        with open(manifest_file, 'w', newline='') as csvfile:
+        with open(manifest_file, 'w', newline='', encoding='utf-8') as csvfile:
             fieldnames = [
                 'Cluster Name / DNS', 'Node ID & IP Address', 'Shard ID', 'Role',
                 'Slot Range', 'Database Port', 'Current Memory Utilization', 'Persistent Storage Type',
@@ -386,7 +386,7 @@ def main():
 
     if args.config:
         try:
-            with open(args.config, 'r') as f:
+            with open(args.config, 'r', encoding='utf-8') as f:
                 config_data = json.load(f)
                 # Apply config values, overriding command line defaults if present in config
                 for key, value in config_data.items():
