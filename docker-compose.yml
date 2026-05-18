@@ -101,8 +101,10 @@ services:
     ports:
       - "26379:26379"
     volumes:
-      - ./sentinel.conf:/etc/redis/sentinel.conf
-    command: redis-sentinel /etc/redis/sentinel.conf
+      - ./sentinel.conf:/sentinel.conf.template:ro
+    command: >
+      bash -c "cp /sentinel.conf.template /tmp/sentinel.conf &&
+      redis-sentinel /tmp/sentinel.conf"
     depends_on:
       - sentinel-primary
 
@@ -115,8 +117,10 @@ services:
     ports:
       - "26380:26379"
     volumes:
-      - ./sentinel.conf:/etc/redis/sentinel.conf
-    command: redis-sentinel /etc/redis/sentinel.conf
+      - ./sentinel.conf:/sentinel.conf.template:ro
+    command: >
+      bash -c "cp /sentinel.conf.template /tmp/sentinel.conf &&
+      redis-sentinel /tmp/sentinel.conf"
     depends_on:
       - sentinel-primary
 
@@ -129,8 +133,10 @@ services:
     ports:
       - "26381:26379"
     volumes:
-      - ./sentinel.conf:/etc/redis/sentinel.conf
-    command: redis-sentinel /etc/redis/sentinel.conf
+      - ./sentinel.conf:/sentinel.conf.template:ro
+    command: >
+      bash -c "cp /sentinel.conf.template /tmp/sentinel.conf &&
+      redis-sentinel /tmp/sentinel.conf"
     depends_on:
       - sentinel-primary
 
