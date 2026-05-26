@@ -122,6 +122,10 @@ def main():
             resp = requests.post(f"{node1_api}/bdbs", json=create_db_payload, auth=(admin_user, admin_pass), verify=False, timeout=15)
             if resp.status_code in [200, 201, 202]:
                 logging.info("Fallback database with RediSearch created successfully on node1.")
+            elif resp.status_code == 400 and "already exists" in resp.text.lower():
+                logging.info("Fallback database already exists on node1.")
+            elif resp.status_code == 406 and "port_unavailable" in resp.text.lower():
+                logging.info("Fallback database port 12000 is already in use (database likely already exists).")
             else:
                 logging.error(f"Failed to create fallback database: {resp.status_code} {resp.text}")
          except Exception as e:
